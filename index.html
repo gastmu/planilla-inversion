@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilla de Inversión PRO</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 28px; }
+        h2 { color: #2c3e50; margin: 20px 0 10px 0; font-size: 18px; border-left: 4px solid #2c3e50; padding-left: 10px; }
+        .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+        .card { background: white; padding: 15px 10px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-top: 4px solid #2c3e50; }
+        .card h4 { font-size: 12px; color: #888; margin-bottom: 8px; text-transform: uppercase; }
+        .card p { font-size: 20px; font-weight: bold; color: #2c3e50; }
+        .card p.positivo { color: #27ae60; }
+        .card p.negativo { color: #e74c3c; }
+        .filtro-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .filtro-container label { font-weight: bold; color: #2c3e50; }
+        select.filtro { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: white; }
+        .botones { display: flex; gap: 10px; margin-bottom: 15px; }
+        button { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
+        .btn-agregar { background: #27ae60; color: white; }
+        .btn-agregar:hover { background: #219a52; }
+        .btn-limpiar { background: #e74c3c; color: white; }
+        .btn-limpiar:hover { background: #c0392b; }
+        .btn-eliminar { background: #e74c3c; color: white; padding: 5px 10px; font-size: 12px; border-radius: 4px; }
+        .tabla-container { overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        thead th { background: #2c3e50; color: white; padding: 12px 8px; text-align: center; font-size: 13px; white-space: nowrap; }
+        tbody td { border-bottom: 1px solid #eee; padding: 6px 4px; text-align: center; }
+        tbody tr:hover { background: #f9f9f9; }
+        tbody input, tbody select { width: 100%; padding: 6px 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: center; background: white; }
+        td.auto { font-weight: bold; color: #2c3e50; background: #f8f9fa; }
+        td.saldo-pos { color: #27ae60; font-weight: bold; background: #f8f9fa; }
+        td.saldo-neg { color: #e74c3c; font-weight: bold; background: #f8f9fa; }
+        .grafico-container { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 30px; }
+        canvas { max-height: 300px; }
+        @media (max-width: 768px) { .dashboard { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+
+<h1>📈 Planilla de Inversión PRO</h1>
+
+<h2>Resumen General</h2>
+<div class="dashboard">
+    <div class="card"><h4>Capital Invertido</h4><p id="capInvertido">$0,00</p></div>
+    <div class="card"><h4>Capital Actual</h4><p id="capActual">$0,00</p></div>
+    <div class="card"><h4>Ganancia Neta</h4><p id="ganancia">$0,00</p></div>
+    <div class="card"><h4>Rentabilidad Total</h4><p id="rentTotal">0,00%</p></div>
+    <div class="card"><h4>Movimientos</h4><p id="totalMovs">0</p></div>
+</div>
+
+<h2>Análisis por Período</h2>
+<div class="filtro-container">
+    <label>Filtrar por mes:</label>
+    <select class="filtro" id="filtroMes" onchange="calcular()">
+        <option value="">Todos los períodos</option>
+        <option value="2026-01">Enero 2026</option>
+        <option value="2026-02">Febrero 2026</option>
+        <option value="2026-03">Marzo 2026</option>
+        <option value="2026-04">Abril 2026</option>
+        <option value="2026-05">Mayo 2026</option>
+        <option value="2026-06">Junio 2026</option>
+        <option value="2026-07">Julio 2026</option>
+        <option value="2026-08">Agosto 2026</option>
+        <option value="2026-09">Septiembre 2026</option>
+        <option value="2026-10">Octubre 2026</option>
+        <option value="2026-11">Noviembre 2026</option>
+        <option value="2026-12">Diciembre 2026</option>
+    </select>
+</div>
+
+<div class="dashboard">
+    <div class="card"><h4>Capital Inicial</h4><p id="capInicialPer">$0,00</p></div>
+    <div class="card"><h4>Aportes del Período</h4><p id="aportesPer">$0,00</p></div>
+    <div class="card"><h4>Resultado del Período</h4><p id="resultadoPer">$0,00</p></div>
+    <div class="card"><h4>Rentabilidad del Período</h4><p id="rentPer">0,00%</p></div>
+    <div class="card"><h4>Movimientos del Período</h4><p id="movsPer">0</p></div>
+</div>
+
+<div class="botones">
+    <button class="btn-agregar" onclick="agregarFila()">➕ Agregar fila</button>
+    <button class="btn-limpiar" onclick="limpiarTodo()">🗑️ Limpiar todo</button>
+</div>
+
+<div class="tabla-container">
+    <table id="tabla">
+        <thead>
+            <tr>
+                <th>Mes</th>
+                <th>Fecha</th>
+                <th>Ticker / Concepto</th>
+                <th>Tipo</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario ($)</th>
+                <th>Total ($)</th>
+                <th>Saldo Acumulado ($)</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="cuerpoTabla"></tbody>
+    </table>
+</div>
+
+<div class="grafico-container">
+    <h2>Evolución del Capital</h2>
+    <canvas id="graficoCapital"></canvas>
+</div>
+
+<script>
+let chart = null;
+
+const meses = [
+    { value: "2026-01", label: "Enero 2026" },
+    { value: "2026-02", label: "Febrero 2026" },
+    { value: "2026-03", label: "Marzo 2026" },
+    { value: "2026-04", label: "Abril 2026" },
+    { value: "2026-05", label: "Mayo 2026" },
+    { value: "2026-06", label: "Junio 2026" },
+    { value: "2026-07", label: "Julio 2026" },
+    { value: "2026-08", label: "Agosto 2026" },
+    { value: "2026-09", label: "Septiembre 2026" },
+    { value: "2026-10", label: "Octubre 2026" },
+    { value: "2026-11", label: "Noviembre 2026" },
+    { value: "2026-12", label: "Diciembre 2026" }
+];
+
+const tipos = ["Compra", "Venta", "Aporte", "Retiro", "Dividendo"];
+
+function crearSelectMes(val) {
+    return "<select onchange=\"calcular()\">" +
+        meses.map(m => `<option value="${m.value}" ${m.value === val ? "selected" : ""}>${m.label}</option>`).join("") +
+        "</select>";
+}
+
+function crearSelectTipo(val) {
+    return "<select onchange=\"calcular()\">" +
+        tipos.map(t => `<option value="${t}" ${t === val ? "selected" : ""}>${t}</option>`).join("") +
+        "</select>";
+}
+
+function agregarFila(datos) {
+    const tbody = document.getElementById("cuerpoTabla");
+    const tr = document.createElement("tr");
+    const mes = datos ? datos.mes : "2026-01";
+    const fecha = datos ? datos.fecha : "";
+    const concepto = datos ? datos.concepto : "";
+    const tipo = datos ? datos.tipo : "Compra";
+    const cantidad = datos ? datos.cantidad : "";
+    const precio = datos ? datos.precio : "";
+
+    tr.innerHTML = `
+        <td>${crearSelectMes(mes)}</td>
+        <td><input type="date" value="${fecha}" onchange="calcular()"></td>
+        <td><input type="text" placeholder="Ej: GGAL, BTC..." value="${concepto}" oninput="guardar()"></td>
+        <td>${crearSelectTipo(tipo)}</td>
+        <td><input type="number" placeholder="0" value="${cantidad}" min="0" oninput="calcular()"></td>
+        <td><input type="number" placeholder="0.00" value="${precio}" min="0" step="0.01" oninput="calcular()"></td>
+        <td class="auto" id="totalFila">$0,00</td>
+        <td class="auto saldo-pos" id="saldoFila">$0,00</td>
+        <td><button class="btn-eliminar" onclick="eliminarFila(this)">🗑️</button></td>
+    `;
+    tbody.appendChild(tr);
+    calcular();
+}
+
+function eliminarFila(btn) {
+    btn.closest("tr").remove();
+    calcular();
+}
+
+function limpiarTodo() {
+    if (confirm("¿Seguro que querés limpiar todos los datos?")) {
+        document.getElementById("cuerpoTabla").innerHTML = "";
+        localStorage.removeItem("planillaInversion");
+        calcular();
+    }
+}
+
+function fmt(num) {
+    return "$" + num.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function calcular() {
+    const filas = document.querySelectorAll("#cuerpoTabla tr");
+    const mesFiltro = document.getElementById("filtroMes").value;
+
+    let saldo = 0, totalAportes = 0;
+    let labelGrafico = [], dataGrafico = [];
+    let capInicialPer = null, aportesPer = 0, movsPer = 0, saldoFinPer = 0;
+
+    filas.forEach((fila, i) => {
+        const mes = fila.children[0].querySelector("select").value;
+        const tipo = fila.children[3].querySelector("select").value;
+        const cantidad = parseFloat(fila.children[4].querySelector("input").value) || 0;
+        const precio = parseFloat(fila.children[5].querySelector("input").value) || 0;
+        const total = cantidad * precio;
+        const fecha = fila.children[1].querySelector("input").value || ("Mov " + (i + 1));
+
+        if (tipo === "Compra" || tipo === "Aporte") { saldo += total; totalAportes += total; }
+        else if (tipo === "Venta" || tipo === "Retiro") { saldo -= total; }
+        else if (tipo === "Dividendo") { saldo += total; }
+
+        fila.querySelector("#totalFila").textContent = fmt(total);
+        const sc = fila.querySelector("#saldoFila");
+        sc.textContent = fmt(saldo);
+        sc.className = saldo >= 0 ? "auto saldo-pos" : "auto saldo-neg";
+
+        labelGrafico.push(fecha);
+        dataGrafico.push(parseFloat(saldo.toFixed(2)));
+
+        if (!mesFiltro || mesFiltro === mes) {
+            if (capInicialPer === null) capInicialPer = saldo - (tipo === "Compra" || tipo === "Aporte" ? total : -total);
+            if (tipo === "Aporte" || tipo === "Compra") aportesPer += total;
+            movsPer++;
+            saldoFinPer = saldo;
+        }
+    });
+
+    const ganancia = saldo - totalAportes;
+    const rentTotal = totalAportes > 0 ? (ganancia / totalAportes * 100) : 0;
+
+    document.getElementById("capInvertido").textContent = fmt(totalAportes);
+    document.getElementById("capActual").textContent = fmt(saldo);
+
+    const gEl = document.getElementById("ganancia");
+    gEl.textContent = fmt(ganancia);
+    gEl.className = ganancia >= 0 ? "positivo" : "negativo";
+
+    const rEl = document.getElementById("rentTotal");
+    rEl.textContent = rentTotal.toFixed(2) + "%";
+    rEl.className = rentTotal >= 0 ? "positivo" : "negativo";
+
+    document.getElementById("totalMovs").textContent = filas.length;
+
+    const resultadoPer = saldoFinPer - (capInicialPer ?? 0) - aportesPer;
+    const rentPer = aportesPer > 0 ? (resultadoPer / aportesPer * 100) : 0;
+
+    document.getElementById("capInicialPer").textContent = fmt(capInicialPer ?? 0);
+    document.getElementById("aportesPer").textContent = fmt(aportesPer);
+
+    const rpEl = document.getElementById("resultadoPer");
+    rpEl.textContent = fmt(resultadoPer);
+    rpEl.className = resultadoPer >= 0 ? "positivo" : "negativo";
+
+    const rrEl = document.getElementById("rentPer");
+    rrEl.textContent = rentPer.toFixed(2) + "%";
+    rrEl.className = rentPer >= 0 ? "positivo" : "negativo";
+
+    document.getElementById("movsPer").textContent = movsPer;
+
+    actualizarGrafico(labelGrafico, dataGrafico);
+    guardar();
+}
+
+function actualizarGrafico(labels, data) {
+    const ctx = document.getElementById("graficoCapital").getContext("2d");
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Capital ($)",
+                data: data,
+                borderColor: "#2c3e50",
+                backgroundColor: "rgba(44,62,80,0.1)",
+                fill: true,
+                tension: 0.3,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: true }, tooltip: { mode: "index", intersect: false } },
+            scales: { y: { beginAtZero: false, ticks: { callback: val => "$" + val.toLocaleString("es-AR") } } }
+        }
+    });
+}
+
+function guardar() {
+    const filas = document.querySelectorAll("#cuerpoTabla tr");
+    const datos = [];
+    filas.forEach(fila => {
+        datos.push({
+            mes: fila.children[0].querySelector("select").value,
+            fecha: fila.children[1].querySelector("input").value,
+            concepto: fila.children[2].querySelector("input").value,
+            tipo: fila.children[3].querySelector("select").value,
+            cantidad: fila.children[4].querySelector("input").value,
+            precio: fila.children[5].querySelector("input").value
+        });
+    });
+    localStorage.setItem("planillaInversion", JSON.stringify(datos));
+}
+
+function cargarDatos() {
+    const guardado = localStorage.getItem("planillaInversion");
+    if (guardado) {
+        JSON.parse(guardado).forEach(d => agregarFila(d));
+    } else {
+        agregarFila();
+    }
+}
+
+window.onload = cargarDatos;
+</script>
+
+</body>
+</html>
