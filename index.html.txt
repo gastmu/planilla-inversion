@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Planilla de Inversión PRO</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f5f7;
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,.12);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background: #2c3e50;
+            color: white;
+        }
+        input, select {
+            width: 100%;
+            border: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Planilla de Inversión PRO</h1>
+
+<h2>Resumen General</h2>
+<div class="dashboard">
+    <div class="card"><h4>Capital Invertido</h4><p id="capInvertido">$0</p></div>
+    <div class="card"><h4>Capital Actual</h4><p id="capActual">$0</p></div>
+    <div class="card"><h4>Ganancia Neta</h4><p id="ganancia">$0</p></div>
+    <div class="card"><h4>Rentabilidad Total</h4><p id="rentTotal">0%</p></div>
+    <div class="card"><h4>Movimientos</h4><p id="movs">0</p></div>
+</div>
+
+<h2>Análisis por Período</h2>
+<select id="filtroMes" onchange="calcular()">
+    <option value="">Todos</option>
+    <option value="2026-01">Enero</option>
+    <option value="2026-02">Febrero</option>
+    <option value="2026-03">Marzo</option>
+</select>
+
+<div class="dashboard">
+    <div class="card"><h4>Capital Inicial</h4><p id="capInicial">$0</p></div>
+    <div class="card"><h4>Aportes</h4><p id="aportes">$0</p></div>
+    <div class="card"><h4>Resultado</h4><p id="resultado">$0</p></div>
+    <div class="card"><h4>Rentabilidad</h4><p id="rentPeriodo">0%</p></div>
+    <div class="card"><h4>Mov. Período</h4><p id="movPeriodo">0</p></div>
+</div>
+
+<table id="tabla">
+    <thead>
+        <tr>
+            <th>Mes</th>
+            <th>Fecha</th>
+            <th>Concepto</th>
+            <th>Aporte</th>
+            <th>Retiro</th>
+            <th>Saldo</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <select>
+                    <option value="2026-01">Enero</option>
+                    <option value="2026-02">Febrero</option>
+                    <option value="2026-03">Marzo</option>
+                </select>
+            </td>
+            <td><input type="date"></td>
+            <td><input type="text"></td>
+            <td><input type="number" oninput="calcular()"></td>
+            <td><input type="number" oninput="calcular()"></td>
+            <td class="saldo">$0</td>
+        </tr>
+    </tbody>
+</table>
+
+<script>
+function calcular() {
+    const filas = document.querySelectorAll("#tabla tbody tr");
+    const mesFiltro = document.getElementById("filtroMes").value;
+
+    let saldo = 0;
+    let saldoPeriodo = 0;
+    let capInicial = null;
+    let aportes = 0;
+    let aportesTotales = 0;
+    let movPeriodo = 0;
+
+    filas.forEach(fila => {
+        const mes = fila.children[0].children[0].value;
+        const aporte = Number(fila.children[3].children[0].value) || 0;
+        const retiro = Number(fila.children[4].children[0].value) || 0;
+
+        saldo += aporte - retiro;
+        aportesTotales += aporte;
+
+        if (!mesFiltro || mesFiltro === mes) {
+            if (capInicial === null) capInicial = saldo - (aporte - retiro);
+            saldoPeriodo += aporte - retiro;
+            aportes += aporte;
+            movPeriodo++;
+        }
+
+        fila.querySelector(".saldo").innerText = "$" + saldo.toFixed(2);
+    });
+
+    // Resumen general
+    document.getElementById("capInvertido").innerText = "$" + aportesTotales.toFixed(2);
+    document.getElementById("capActual").innerText = "$" + saldo.toFixed(2);
+    document.getElementById("ganancia").innerText = "$" + (saldo - aportesTotales).toFixed(2);
+    document.getElementById("rentTotal").innerText =
+        aportesTotales > 0 ? ((saldo - aportesTotales) / aportesTotales * 100).toFixed(2) + "%" : "0%";
+    document.getElementById("movs").innerText = filas.length;
+
+    // Resumen por período
+    const resultado = saldoPeriodo;
+    const rentPeriodo = aportes > 0 ? (resultado / aportes * 100) : 0;
+
+    document.getElementById("capInicial").innerText = "$" + (capInicial ?? 0).toFixed(2);
+    document.getElementById("aportes").innerText = "$" + aportes.toFixed(2);
+    document.getElementById("resultado").innerText = "$" + resultado.toFixed(2);
+    document.getElementById("rentPeriodo").innerText = rentPeriodo.toFixed(2) + "%";
+    document.getElementById("movPeriodo").innerText = movPeriodo;
+}
+</script>
+
+</body>
+</html>
